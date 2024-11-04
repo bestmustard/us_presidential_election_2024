@@ -1,37 +1,27 @@
 #### Preamble ####
-# Purpose: Models... [...UPDATE THIS...]
-# Author: Rohan Alexander [...UPDATE THIS...]
-# Date: 11 February 2023 [...UPDATE THIS...]
-# Contact: rohan.alexander@utoronto.ca [...UPDATE THIS...]
+# Purpose: Performs exploratory data analysis on the cleaned polling data for US presidential election prediction
+# Author: Victor Ma
+# Date: 4 November 2024
+# Contact: victo.ma@mail.utoronto.ca
 # License: MIT
-# Pre-requisites: [...UPDATE THIS...]
-# Any other information needed? [...UPDATE THIS...]
+# Pre-requisites: The `tidyverse` package must be installed
+###################
 
+library(ggplot2)
+library(dplyr)
 
-#### Workspace setup ####
-library(tidyverse)
-library(rstanarm)
+# Load cleaned data
+polls_data <- read.csv("data/02-analysis_data/cleaned_polls_data.csv")
 
-#### Read data ####
-analysis_data <- read_csv("data/analysis_data/analysis_data.csv")
+# Summary statistics
+polls_summary <- polls_data %>%
+  group_by(candidate_name) %>%
+  summarise(avg_support = mean(pct, na.rm = TRUE))
 
-### Model data ####
-first_model <-
-  stan_glm(
-    formula = flying_time ~ length + width,
-    data = analysis_data,
-    family = gaussian(),
-    prior = normal(location = 0, scale = 2.5, autoscale = TRUE),
-    prior_intercept = normal(location = 0, scale = 2.5, autoscale = TRUE),
-    prior_aux = exponential(rate = 1, autoscale = TRUE),
-    seed = 853
-  )
+print(polls_summary)
 
-
-#### Save model ####
-saveRDS(
-  first_model,
-  file = "models/first_model.rds"
-)
-
-
+# Plot support trends for each candidate
+ggplot(polls_data, aes(x = candidate_name, y = pct, fill = candidate_name)) +
+  geom_boxplot() +
+  labs(title = "Candidate Support Distribution", x = "Candidate", y = "Support Percentage") +
+  theme_minimal()

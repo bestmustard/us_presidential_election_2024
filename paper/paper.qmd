@@ -1,259 +1,143 @@
 ---
-title: "My title"
-subtitle: "My subtitle if needed"
-author: 
-  - First author
-  - Another author
-thanks: "Code and data are available at: [https://github.com/RohanAlexander/starter_folder](https://github.com/RohanAlexander/starter_folder)."
-date: today
-date-format: long
-abstract: "First sentence. Second sentence. Third sentence. Fourth sentence."
+title: "Predicting the 2024 U.S. Presidential Election Outcome: A Narrow Lead for Trump over Harris Using a Poll-of-Polls Approach"
+author: "Victor Ma"
+date: "November 4, 2024"
+output: pdf_document
 format: pdf
-number-sections: true
 bibliography: references.bib
 ---
 
-```{r}
-#| include: false
-#| warning: false
-#| message: false
+## Abstract
+This paper utilizes a “poll-of-polls” approach to forecast the outcome of the 2024 U.S. presidential election, focusing on Donald Trump and Kamala Harris as the primary candidates. Leveraging data from FiveThirtyEight's aggregated polling dataset and implementing a generalized linear model (GLM) in R, our analysis predicts a narrow lead for Donald Trump over Kamala Harris. The aggregation approach reduces bias from individual polls and provides a more reliable prediction in a competitive election.
 
-library(tidyverse)
-library(palmerpenguins)
+## Introduction
+Election forecasting has become a significant area in political science, with public opinion polls serving as a primary tool for gauging voter intentions. Single polls often reflect biases in sampling and methodology. To counter this, a “poll-of-polls” approach combines data from multiple sources, smoothing variations and providing a more stable estimate of voter intentions @Blumenthal2014; @Pasek2015.
+
+This paper utilizes FiveThirtyEight’s aggregated polling data, which incorporates adjustments for pollster quality and sampling variations. FiveThirtyEight’s methodology rates pollsters on reliability, providing a robust data source for aggregation @Silver2014. A generalized linear model (GLM) was applied to estimate support levels for Trump and Harris based on this aggregated data, offering insight into the expected popular vote.
+
+This analysis was conducted in R, a powerful statistical programming environment @RCoreTeam2023. Various R libraries such as `dplyr` for data manipulation @Wickham2019, `ggplot2` for data visualization @Wickham2016, `broom` for model tidying @Robinson2017, and `readr` for reading datasets @Wickham2020 were used to handle data cleaning, modeling, and visualization tasks. Additionally, the language model ChatGPT by OpenAI provided support with scripting and general writing purposes @ChatGPT2023.
+
+## Data Collection and Preparation
+
+### Data Collection
+Polling data was obtained from FiveThirtyEight’s database, which aggregates polls from various reputable sources like YouGov, Ipsos, and Emerson College. FiveThirtyEight's data includes ratings for each pollster based on historical accuracy, providing weighted averages that account for sample size and pollster reliability @Silver2014.
+
+### Data Cleaning
+To ensure consistency, only polls with support percentages between 40% and 60% were included. Missing values in `sample_size` were imputed using the median @Lohr2021.
+
+```{r data-insights, echo=FALSE, message=FALSE, warning=FALSE, results="hide", fig.cap="Distribution of Candidate Support Percentage (pct)"}
+library(dplyr)
+library(ggplot2)
+library(readr)
+
+polls_data <- read_csv("../data/02-analysis_data/cleaned_polls_data.csv") %>%
+  filter(pct >= 40, pct <= 60)
+
+summary_stats <- polls_data %>%
+  summarize(
+    min_sample_size = min(sample_size, na.rm = TRUE),
+    median_sample_size = median(sample_size, na.rm = TRUE),
+    max_sample_size = max(sample_size, na.rm = TRUE),
+    mean_sample_size = mean(sample_size, na.rm = TRUE),
+    sd_sample_size = sd(sample_size, na.rm = TRUE),
+    min_pct = min(pct),
+    median_pct = median(pct),
+    max_pct = max(pct),
+    mean_pct = mean(pct),
+    sd_pct = sd(pct)
+  )
+
+ggplot(polls_data, aes(x = pct)) +
+  geom_histogram(binwidth = 1, fill = "skyblue", color = "black") +
+  labs(x = "Support Percentage (pct)", y = "Count") +
+  theme_minimal()
 ```
 
+## Model and Methodology
 
-# Introduction
+### Model Choice
+A generalized linear model (GLM) with a binomial family and logit link function was used to estimate each candidate's probability of securing the popular vote. This approach is commonly applied in binary outcomes @Gelman2007.
 
-Overview paragraph
+### Model Implementation and Analysis
+The GLM was trained on the cleaned polling data, incorporating predictors like pollster reliability, sample size, and pct. Below, we display the top predictors from the model and examine its diagnostics.
 
-Estimand paragraph
+```{r model-insights-summary, echo=FALSE, message=FALSE, warning=FALSE, results="hide", fig.cap="Top Predictors by Significance in GLM Model"}
+library(broom)
+library(ggplot2)
 
-Results paragraph
+# Load the trained GLM model
+glm_model <- readRDS("../models/first_model.rds")
+model_summary <- tidy(glm_model) %>% arrange(p.value) %>% head(10)
 
-Why it matters paragraph
-
-Telegraphing paragraph: The remainder of this paper is structured as follows. @sec-data....
-
-
-
-
-
-
-# Data {#sec-data}
-
-## Overview
-
-We use the statistical programming language R [@citeR].... Our data [@shelter].... Following @tellingstories, we consider...
-
-Overview text
-
-## Measurement
-	
-Some paragraphs about how we go from a phenomena in the world to an entry in the dataset.
-
-## Outcome variables
-
-Add graphs, tables and text. Use sub-sub-headings for each outcome variable or update the subheading to be singular.
-
-
-
-Some of our data is of penguins (@fig-bills), from @palmerpenguins.
-
-```{r}
-#| label: fig-bills
-#| fig-cap: Bills of penguins
-#| echo: false
-
-ggplot(penguins, aes(x = island, fill = species)) +
-  geom_bar(alpha = 0.8) +
-  scale_fill_manual(values = c("darkorange","purple","cyan4"),
-                    guide = "none") +
+# Enhanced Plot for Readability
+ggplot(model_summary, aes(x = reorder(term, -estimate), y = estimate)) +
+  geom_bar(stat = "identity", fill = "steelblue", width = 0.7) +
+  labs(x = "Predictor", y = "Estimate") +
   theme_minimal() +
-  facet_wrap(~species, ncol = 1) +
-  coord_flip()
+  theme(axis.text.x = element_text(size = 10),
+        axis.text.y = element_text(size = 8, hjust = 1, angle = 45)) +
+  coord_flip() +
+  scale_y_continuous(breaks = seq(0, 0.4, by = 0.1)) +
+  labs(title = "Top Predictors by Significance in GLM Model")
+
 ```
 
-Talk more about it.
+### Model Diagnostics
+Residual plots provide insight into the model’s fit by displaying discrepancies between predicted probabilities and actual support percentages.
 
-And also planes (@fig-planes). (You can change the height and width, but don't worry about doing that until you have finished every other aspect of the paper - Quarto will try to make it look nice and the defaults usually work well once you have enough text.)
+```{r model-diagnostics, echo=FALSE, message=FALSE, warning=FALSE, results="hide", fig.cap="Residuals of Predicted Probability vs Actual Support"}
 
-```{r}
-#| label: fig-planes
-#| fig-cap: Relationship between wing length and width
-#| echo: false
-#| warning: false
-#| message: false
+polls_data$predicted_probability <- predict(glm_model, newdata = polls_data, type = "response")
+polls_data$residual <- polls_data$pct - (polls_data$predicted_probability * 100)
 
-analysis_data <- read_csv(here::here("data/02-analysis_data/analysis_data.csv"))
+ggplot(polls_data, aes(x = predicted_probability * 100, y = residual)) +
+  geom_point(alpha = 0.5) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
+  labs(x = "Predicted Support Percentage", y = "Residual") +
+  theme_minimal()
+```
+## Results
+The GLM analysis predicts a slight lead for Donald Trump, with an average probability of 51% compared to Harris’s 49%, demonstrating the race's competitiveness. Visualizations of predicted probabilities further illustrate this trend.
 
-analysis_data |> 
-  ggplot(aes(x = width, y = length)) +
-  geom_point(alpha = 0.8) +
+```{r model-predictions, echo=FALSE, message=FALSE, warning=FALSE, results="hide", fig.cap="Predicted Probability vs. Actual Support Percentage"}
+
+ggplot(polls_data, aes(x = pct, y = predicted_probability, color = candidate_name)) +
+  geom_point(alpha = 0.5) +
+  labs(x = "Actual Support Percentage (pct)", y = "Predicted Probability") +
   theme_minimal() +
-  labs(x = "Wing width (mm)",
-       y = "Wing length (mm)")
+  theme(legend.position = "bottom", legend.direction = "horizontal") +
+  guides(color = guide_legend(nrow = 2, byrow = TRUE))
+
 ```
 
-Talk way more about it. 
+## Discussion
+The poll-of-polls approach aggregates polling data from diverse sources to improve the accuracy and stability of election forecasts. By using FiveThirtyEight's aggregated dataset, we leveraged the advantages of weighted poll aggregation, which accounts for pollster reliability and sample size, reducing the bias of any single poll source @Silver2014. This methodology is particularly important in the 2024 U.S. presidential election, where fluctuations in public sentiment can vary significantly across regions and demographics.
 
-## Predictor variables
+Our model’s prediction of a slight lead for Donald Trump over Kamala Harris reflects a close race, with residual analysis suggesting areas for model refinement. Despite a generally well-fitted model, some residual variance indicates potential improvements in weighting adjustments or the inclusion of additional predictors. This variation could stem from demographic shifts or unmeasured confounding factors not captured in traditional polling.
 
-Add graphs, tables and text.
+The use of generalized linear models (GLMs) with logistic regression enabled robust probability estimation for binary outcomes, such as predicting the likelihood of a candidate winning the popular vote @Gelman2007. This technique aligns with established best practices for binary outcome modeling, providing an interpretable framework for election prediction.
 
-Use sub-sub-headings for each outcome variable and feel free to combine a few into one if they go together naturally.
-
-
-
+Future improvements could include implementing multilevel regression with post-stratification (MRP) to enhance the granularity of predictions by adjusting for demographic subgroups at a more localized level @BaileyRivers2024. Additionally, our analysis could benefit from exploring alternative data sources, such as social media sentiment analysis, to capture shifts in voter opinion more dynamically.
 
 
 
+## Appendix A: Evaluation of YouGov’s Polling Methodology
+YouGov's MRP model is effective for capturing U.S. voting patterns, using demographic post-stratification and periodic re-interviews to track sentiment over time @BaileyRivers2024.
 
+### Methodology Evaluation
+Population & Frame: Verified U.S. registered voters, linked to TargetSmart, which improves sample validity but may limit newly registered voter representation @Gelman2007.
+Sample Recruitment: Longitudinal panel recruitment adds stability but risks overfitting to consistent respondents.
+Sampling Approach: MRP uses demographic profiles to estimate behavior in small groups, though extreme outliers may challenge accuracy @BaileyRivers2024.
+Non-Response: Weighting adjustments address non-response, but hidden biases may persist.
+Appendix B: Ideal Survey Design with $100K Budget
+Given the budget, a mixed-method survey (online + phone) would maximize reach and cost-efficiency @Dillman2014. Stratified sampling, quota-based recruiting, and post-weighting adjustments ensure a balanced sample @Lohr2021.
 
-# Model
+### Survey Design Rationale
+Sampling: Stratification across key demographics (age, income, location) addresses common polling biases and maximizes representativeness @Dillman2014.
+Data Validation: Attention checks improve data quality, while demographic weighting aligns results with the general voter population @BaileyRivers2024.
+Recruitment Strategy: Mixed-methods enhance inclusivity across urban and rural regions @Lohr2021.
+A detailed survey template on Google Forms provides consistency and scalability, meeting design and budget constraints.
 
-The goal of our modelling strategy is twofold. Firstly,...
-
-Here we briefly describe the Bayesian analysis model used to investigate... Background details and diagnostics are included in [Appendix -@sec-model-details].
-
-## Model set-up
-
-Define $y_i$ as the number of seconds that the plane remained aloft. Then $\beta_i$ is the wing width and $\gamma_i$ is the wing length, both measured in millimeters.  
-
-\begin{align} 
-y_i|\mu_i, \sigma &\sim \mbox{Normal}(\mu_i, \sigma) \\
-\mu_i &= \alpha + \beta_i + \gamma_i\\
-\alpha &\sim \mbox{Normal}(0, 2.5) \\
-\beta &\sim \mbox{Normal}(0, 2.5) \\
-\gamma &\sim \mbox{Normal}(0, 2.5) \\
-\sigma &\sim \mbox{Exponential}(1)
-\end{align}
-
-We run the model in R [@citeR] using the `rstanarm` package of @rstanarm. We use the default priors from `rstanarm`.
-
-
-### Model justification
-
-We expect a positive relationship between the size of the wings and time spent aloft. In particular...
-
-We can use maths by including latex between dollar signs, for instance $\theta$.
-
-
-# Results
-
-Our results are summarized in @tbl-modelresults.
-
-```{r}
-#| echo: false
-#| eval: true
-#| warning: false
-#| message: false
-
-library(rstanarm)
-
-first_model <-
-  readRDS(file = here::here("models/first_model.rds"))
-```
-
-```{r}
-#| echo: false
-#| eval: true
-#| label: tbl-modelresults
-#| tbl-cap: "Explanatory models of flight time based on wing width and wing length"
-#| warning: false
-
-modelsummary::modelsummary(
-  list(
-    "First model" = first_model
-  ),
-  statistic = "mad",
-  fmt = 2
-)
-```
-
-
-
-
-# Discussion
-
-## First discussion point {#sec-first-point}
-
-If my paper were 10 pages, then should be be at least 2.5 pages. The discussion is a chance to show off what you know and what you learnt from all this. 
-
-## Second discussion point
-
-Please don't use these as sub-heading labels - change them to be what your point actually is.
-
-## Third discussion point
-
-## Weaknesses and next steps
-
-Weaknesses and next steps should also be included.
-
-\newpage
-
-\appendix
-
-# Appendix {-}
-
-
-# Additional data details
-
-# Model details {#sec-model-details}
-
-## Posterior predictive check
-
-In @fig-ppcheckandposteriorvsprior-1 we implement a posterior predictive check. This shows...
-
-In @fig-ppcheckandposteriorvsprior-2 we compare the posterior with the prior. This shows... 
-
-```{r}
-#| eval: true
-#| echo: false
-#| message: false
-#| warning: false
-#| label: fig-ppcheckandposteriorvsprior
-#| layout-ncol: 2
-#| fig-cap: "Examining how the model fits, and is affected by, the data"
-#| fig-subcap: ["Posterior prediction check", "Comparing the posterior with the prior"]
-
-pp_check(first_model) +
-  theme_classic() +
-  theme(legend.position = "bottom")
-
-posterior_vs_prior(first_model) +
-  theme_minimal() +
-  scale_color_brewer(palette = "Set1") +
-  theme(legend.position = "bottom") +
-  coord_flip()
-```
-
-## Diagnostics
-
-@fig-stanareyouokay-1 is a trace plot. It shows... This suggests...
-
-@fig-stanareyouokay-2 is a Rhat plot. It shows... This suggests...
-
-```{r}
-#| echo: false
-#| eval: true
-#| message: false
-#| warning: false
-#| label: fig-stanareyouokay
-#| fig-cap: "Checking the convergence of the MCMC algorithm"
-#| fig-subcap: ["Trace plot", "Rhat plot"]
-#| layout-ncol: 2
-
-plot(first_model, "trace")
-
-plot(first_model, "rhat")
-```
-
-
-
-\newpage
 
 
 # References
-
-
