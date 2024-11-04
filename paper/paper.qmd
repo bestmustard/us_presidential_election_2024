@@ -1,29 +1,34 @@
 ---
 title: "Predicting the 2024 U.S. Presidential Election Outcome: A Narrow Lead for Trump over Harris Using a Poll-of-Polls Approach"
-author: "Victor Ma"
-date: "November 4, 2024"
-output: pdf_document
+author: 
+  - Victor Ma
+thanks: "Code and data are available at: https://github.com/bestmustard/us_presidential_election_2024"
+date: 11/04/2024
+date-format: long
+abstract: "This paper utilizes a “poll-of-polls” approach to forecast the outcome of the 2024 U.S. presidential election, focusing on Donald Trump and Kamala Harris as the primary candidates. Leveraging data from FiveThirtyEight's aggregated polling dataset and implementing a generalized linear model (GLM) in R, our analysis predicts a narrow lead for Donald Trump over Kamala Harris. The aggregation approach reduces bias from individual polls and provides a more reliable prediction in a competitive election."
 format: pdf
+number-sections: true
 bibliography: references.bib
+editor: 
+  markdown: 
+    wrap: 72
 ---
 
-## Abstract
-This paper utilizes a “poll-of-polls” approach to forecast the outcome of the 2024 U.S. presidential election, focusing on Donald Trump and Kamala Harris as the primary candidates. Leveraging data from FiveThirtyEight's aggregated polling dataset and implementing a generalized linear model (GLM) in R, our analysis predicts a narrow lead for Donald Trump over Kamala Harris. The aggregation approach reduces bias from individual polls and provides a more reliable prediction in a competitive election.
 
 ## Introduction
-Election forecasting has become a significant area in political science, with public opinion polls serving as a primary tool for gauging voter intentions. Single polls often reflect biases in sampling and methodology. To counter this, a “poll-of-polls” approach combines data from multiple sources, smoothing variations and providing a more stable estimate of voter intentions @Blumenthal2014; @Pasek2015.
+Election forecasting has become a significant area in political science, with public opinion polls serving as a primary tool for gauging voter intentions. Single polls often reflect biases in sampling and methodology. To counter this, a “poll-of-polls” approach combines data from multiple sources, smoothing variations and providing a more stable estimate of voter intentions (@Blumenthal2014; @Pasek2015).
 
-This paper utilizes FiveThirtyEight’s aggregated polling data, which incorporates adjustments for pollster quality and sampling variations. FiveThirtyEight’s methodology rates pollsters on reliability, providing a robust data source for aggregation @Silver2014. A generalized linear model (GLM) was applied to estimate support levels for Trump and Harris based on this aggregated data, offering insight into the expected popular vote.
+This paper utilizes FiveThirtyEight’s aggregated polling data, which incorporates adjustments for pollster quality and sampling variations (@fte). FiveThirtyEight’s methodology rates pollsters on reliability, providing a robust data source for aggregation (@Silver2014). A generalized linear model (GLM) was applied to estimate support levels for Trump and Harris based on this aggregated data, offering insight into the expected popular vote.
 
-This analysis was conducted in R, a powerful statistical programming environment @RCoreTeam2023. Various R libraries such as `dplyr` for data manipulation @Wickham2019, `ggplot2` for data visualization @Wickham2016, `broom` for model tidying @Robinson2017, and `readr` for reading datasets @Wickham2020 were used to handle data cleaning, modeling, and visualization tasks. Additionally, the language model ChatGPT by OpenAI provided support with scripting and general writing purposes @ChatGPT2023.
+This analysis was conducted in R, a powerful statistical programming environment (@RCoreTeam2023). Various R libraries such as `dplyr` for data manipulation (@Wickham2019), `ggplot2` for data visualization (@Wickham2016), `broom` for model tidying (@Robinson2017), and `readr` for reading datasets (@Wickham2020) were used to handle data cleaning, modeling, and visualization tasks. Additionally, the language model ChatGPT by OpenAI provided support with scripting and general writing purposes (@ChatGPT2023).
 
 ## Data Collection and Preparation
 
 ### Data Collection
-Polling data was obtained from FiveThirtyEight’s database, which aggregates polls from various reputable sources like YouGov, Ipsos, and Emerson College. FiveThirtyEight's data includes ratings for each pollster based on historical accuracy, providing weighted averages that account for sample size and pollster reliability @Silver2014.
+Polling data was downloaded directly as a csv file from FiveThirtyEight’s website, which aggregates polls from various reputable sources like YouGov, Ipsos, and Emerson College (@fte). FiveThirtyEight's data includes ratings for each pollster based on historical accuracy, providing weighted averages that account for sample size and pollster reliability (@Silver2014).
 
 ### Data Cleaning
-To ensure consistency, only polls with support percentages between 40% and 60% were included. Missing values in `sample_size` were imputed using the median @Lohr2021.
+To ensure consistency, only polls with support percentages rather than deterministic outcomes were used. This means, values such as "0" and "1" were removed from our dataset, but percentages out of 100 were kept. Missing values in `sample_size` were imputed using the median (@Lohr2021).
 
 ```{r data-insights, echo=FALSE, message=FALSE, warning=FALSE, results="hide", fig.cap="Distribution of Candidate Support Percentage (pct)"}
 library(dplyr)
@@ -56,7 +61,7 @@ ggplot(polls_data, aes(x = pct)) +
 ## Model and Methodology
 
 ### Model Choice
-A generalized linear model (GLM) with a binomial family and logit link function was used to estimate each candidate's probability of securing the popular vote. This approach is commonly applied in binary outcomes @Gelman2007.
+A generalized linear model (GLM) with a binomial family and logit link function was used to estimate each candidate's probability of securing the popular vote. This approach is commonly applied in binary outcomes (@Gelman2007).
 
 ### Model Implementation and Analysis
 The GLM was trained on the cleaned polling data, incorporating predictors like pollster reliability, sample size, and pct. Below, we display the top predictors from the model and examine its diagnostics.
@@ -111,33 +116,37 @@ ggplot(polls_data, aes(x = pct, y = predicted_probability, color = candidate_nam
 ```
 
 ## Discussion
-The poll-of-polls approach aggregates polling data from diverse sources to improve the accuracy and stability of election forecasts. By using FiveThirtyEight's aggregated dataset, we leveraged the advantages of weighted poll aggregation, which accounts for pollster reliability and sample size, reducing the bias of any single poll source @Silver2014. This methodology is particularly important in the 2024 U.S. presidential election, where fluctuations in public sentiment can vary significantly across regions and demographics.
+The poll-of-polls approach aggregates polling data from diverse sources to improve the accuracy and stability of election forecasts. By using FiveThirtyEight's aggregated dataset, we leveraged the advantages of weighted poll aggregation, which accounts for pollster reliability and sample size, reducing the bias of any single poll source (@Silver2014). This methodology is particularly important in the 2024 U.S. presidential election, where fluctuations in public sentiment can vary significantly across regions and demographics.
 
 Our model’s prediction of a slight lead for Donald Trump over Kamala Harris reflects a close race, with residual analysis suggesting areas for model refinement. Despite a generally well-fitted model, some residual variance indicates potential improvements in weighting adjustments or the inclusion of additional predictors. This variation could stem from demographic shifts or unmeasured confounding factors not captured in traditional polling.
 
-The use of generalized linear models (GLMs) with logistic regression enabled robust probability estimation for binary outcomes, such as predicting the likelihood of a candidate winning the popular vote @Gelman2007. This technique aligns with established best practices for binary outcome modeling, providing an interpretable framework for election prediction.
+The use of generalized linear models (GLMs) with logistic regression was ideal for probability estimation for binary outcomes, such as predicting the likelihood of a candidate winning the popular vote (@Gelman2007). This technique aligns with established best practices for binary outcome modeling, providing an interpretable framework for election prediction.
 
-Future improvements could include implementing multilevel regression with post-stratification (MRP) to enhance the granularity of predictions by adjusting for demographic subgroups at a more localized level @BaileyRivers2024. Additionally, our analysis could benefit from exploring alternative data sources, such as social media sentiment analysis, to capture shifts in voter opinion more dynamically.
-
-
+Future improvements could include implementing multilevel regression with post-stratification (MRP) to enhance the granularity of predictions by adjusting for demographic subgroups at a more localized level (@BaileyRivers2024). Additionally, our analysis could benefit from exploring alternative data sources, such as social media sentiment analysis, to capture shifts in voter opinion more dynamically.
 
 ## Appendix A: Evaluation of YouGov’s Polling Methodology
-YouGov's MRP model is effective for capturing U.S. voting patterns, using demographic post-stratification and periodic re-interviews to track sentiment over time @BaileyRivers2024.
+YouGov's MRP model is effective for capturing U.S. voting patterns, using demographic post-stratification and periodic re-interviews to track sentiment over time (@BaileyRivers2024).
 
 ### Methodology Evaluation
-Population & Frame: Verified U.S. registered voters, linked to TargetSmart, which improves sample validity but may limit newly registered voter representation @Gelman2007.
+Population & Frame: Verified U.S. registered voters, linked to TargetSmart, which improves sample validity but may limit newly registered voter representation (@Gelman2007).
+
 Sample Recruitment: Longitudinal panel recruitment adds stability but risks overfitting to consistent respondents.
-Sampling Approach: MRP uses demographic profiles to estimate behavior in small groups, though extreme outliers may challenge accuracy @BaileyRivers2024.
+
+Sampling Approach: MRP uses demographic profiles to estimate behavior in small groups, though extreme outliers may challenge accuracy (@BaileyRivers2024).
+
 Non-Response: Weighting adjustments address non-response, but hidden biases may persist.
-Appendix B: Ideal Survey Design with $100K Budget
-Given the budget, a mixed-method survey (online + phone) would maximize reach and cost-efficiency @Dillman2014. Stratified sampling, quota-based recruiting, and post-weighting adjustments ensure a balanced sample @Lohr2021.
+
+## Appendix B: Ideal Survey Design with $100K Budget
+Given the budget, a mixed-method survey (online + phone) would maximize reach and cost-efficiency (@Dillman2014). Stratified sampling, quota-based recruiting, and post-weighting adjustments ensure a balanced sample (@Lohr2021).
 
 ### Survey Design Rationale
-Sampling: Stratification across key demographics (age, income, location) addresses common polling biases and maximizes representativeness @Dillman2014.
-Data Validation: Attention checks improve data quality, while demographic weighting aligns results with the general voter population @BaileyRivers2024.
-Recruitment Strategy: Mixed-methods enhance inclusivity across urban and rural regions @Lohr2021.
+Sampling: Stratification across key demographics (age, income, location) addresses common polling biases and maximizes representativeness (@Dillman2014).
+
+Data Validation: Attention checks improve data quality, while demographic weighting aligns results with the general voter population (@BaileyRivers2024).
+
+Recruitment Strategy: Mixed-methods enhance inclusivity across urban and rural regions (@Lohr2021).
 A detailed survey template on Google Forms provides consistency and scalability, meeting design and budget constraints.
 
-
+\pagebreak
 
 # References
