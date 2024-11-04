@@ -19,4 +19,4 @@ The repo is structured as:
 
 ## Statement on LLM usage
 
-Scripts were written with the help of ChatGPT4, and aspects of the paper, namely references, were written with the help of ChatGPT4. The entire chat history is available in inputs/llms/usage.txt.
+Scripts and aspects of the paper, namely references, discussion, and appendix were written with the help of ChatGPT4. The entire chat history is available in inputs/llms/usage.txt.
